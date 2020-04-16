@@ -45,35 +45,54 @@ object Main extends App {
         println(s"service (${month}/${year}) => ${service}")
       }
 
-      if(temporal.nonEmpty) {
-        var nextMonth = months.last + 1
-        var nextYear = years.last
-        if(months.last == 12) {
-          nextMonth = 1
-          nextYear = years.last
+      val n = 0.5f
+      val nTest = math.round(n * temporal.length)
+
+      println(s"nTest: ${nTest}")
+
+      if (temporal.length > nTest) {
+        for (a <- 0 to nTest) {
+          if(a != 0) {
+            months = months.init
+            years = years.init
+            services = services.init
+            values = values.init
+            foods = foods.init
+            vaders = vaders.init
+            wordnets = wordnets.init
+          }
+
+          if (months.nonEmpty) {
+            var nextMonth = months.last + 1
+            var nextYear = years.last
+            if(months.last == 12) {
+              nextMonth = 1
+              nextYear = years.last + 1
+            }
+
+            val servicePrediction = getPredictiveResult(services, 0.8)
+            val valuePrediction = getPredictiveResult(values, 0.8)
+            val foodPrediction = getPredictiveResult(foods, 0.8)
+            val vaderPrediction = getPredictiveResult(vaders, 0.8)
+            val wordnetPrediction = getPredictiveResult(wordnets, 0.8)
+
+            val document = Document(
+              "location_id" -> location("location_id").asString().getValue,
+              "location" -> location,
+              "restaurant_id" -> restaurant("location_id").asString().getValue,
+              "restaurant" -> restaurant,
+              "month" -> nextMonth,
+              "year" -> nextYear,
+              "service" -> servicePrediction,
+              "value" -> valuePrediction,
+              "food" -> foodPrediction,
+              "vader" -> vaderPrediction,
+              "wordnet" -> wordnetPrediction
+            )
+
+            savePredictionResult(restaurant("_id").asObjectId().getValue, document)
+          }
         }
-
-        val servicePrediction = getPredictiveResult(services, 0.8)
-        val valuePrediction = getPredictiveResult(values, 0.8)
-        val foodPrediction = getPredictiveResult(foods, 0.8)
-        val vaderPrediction = getPredictiveResult(vaders, 0.8)
-        val wordnetPrediction = getPredictiveResult(wordnets, 0.8)
-
-        val document = Document(
-          "location_id" -> location("location_id").asString().getValue,
-          "location" -> location,
-          "restaurant_id" -> restaurant("location_id").asString().getValue,
-          "restaurant" -> restaurant,
-          "month" -> nextMonth,
-          "year" -> nextYear,
-          "service" -> servicePrediction,
-          "value" -> valuePrediction,
-          "food" -> foodPrediction,
-          "vader" -> vaderPrediction,
-          "wordnet" -> wordnetPrediction
-        )
-
-        savePredictionResult(restaurant("_id").asObjectId().getValue, document)
       }
     }
   }
