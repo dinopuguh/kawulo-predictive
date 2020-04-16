@@ -1,14 +1,22 @@
 package services
 
-import database.Mongo.db
 import database.Helpers._
+import database.Mongo.db
+import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.collection.immutable.Document
-import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.Sorts.ascending
 
 import scala.math.pow
 
 object PredictiveService {
+  def findOldPredictive(restaurantId: String): Seq[Document] = {
+    val collection:MongoCollection[Document] = db.getCollection("prediction")
+
+    collection.find(equal("restaurant_id", restaurantId)).sort(ascending("year", "month")).results()
+  }
+
   def getPredictiveResult(data: Seq[Double], alpha: Double):Double = {
     var result: Double = 0
     val n: Int = data.length
@@ -29,10 +37,10 @@ object PredictiveService {
   def savePredictionResult(restaurantId: ObjectId, document: Document): Unit = {
     val collection = db.getCollection("prediction")
 
-    val prediction = collection.find(equal("restaurant._id", restaurantId)).headResult()
+    val prediction = collection.find(and(equal("restaurant._id", restaurantId), equal("month", document("month")), equal("year", document("year")))).headResult()
 
     if(prediction != null) {
-      collection.updateOne(equal("_id", prediction("_id").asObjectId().getValue), document).printHeadResult()
+      collection.replaceOne(equal("_id", prediction("_id").asObjectId().getValue), document).printHeadResult()
     }else {
       collection.insertOne(document).printHeadResult()
     }
